@@ -99,7 +99,8 @@ module engrave_front_text(width, height, depth, wall) {
     translate([0, plate_thickness/2 + depth + 0.01, height/2])
       rotate([90, 0, 0])
         linear_extrude(height=engraving_depth)
-          text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
+          mirror([1,0,0])
+            text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
   }
 }
 
