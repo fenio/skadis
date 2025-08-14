@@ -96,7 +96,10 @@ module rounded_rect_2d(w, d, r) {
 module front_text_geometry(depth_amount) {
   linear_extrude(height=depth_amount)
     mirror([1,0,0])
-      offset(r=text_round_radius)
+      if (text_round_radius > 0)
+        offset(r=text_round_radius)
+          text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
+      else
         text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
 }
 
