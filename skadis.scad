@@ -14,6 +14,12 @@ HS              = 1000;
 /* [Fillet] */
 wall_fillet_radius = 0; // set > 0 to enable wall fillet
 
+/* [Engraving] */
+engrave_text  = "";           // Leave empty to disable engraving
+engrave_size  = 12;            // Text size in mm
+engrave_depth = 0.8;           // Depth of engraving into the front wall (mm)
+engrave_font  = "";           // Example: "Liberation Sans:style=Bold"; empty uses OpenSCAD default
+
 module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radius=0) {
   back_plate_with_clips(width=width, height=height);
   front_box_on_plate(width=width, height=height, depth=depth, wall=wall, bottom=bottom, fillet_radius=fillet_radius);
@@ -84,6 +90,19 @@ module rounded_rect_2d(w, d, r) {
   offset(r=rr) offset(delta=-rr) square([w, d], center=false);
 }
 
+// Engrave text onto the front face by subtracting text extruded inward
+module engrave_front_text(width, height, depth, wall) {
+  if (engrave_text != "") {
+    // Keep engraving shallower than wall to avoid breakthrough
+    engraving_depth = min(engrave_depth, max(wall - 0.2, 0.1));
+    // Center horizontally (X) and vertically (Z), place at the outer front face (Y), extrude inward (-Y)
+    translate([0, plate_thickness/2 + depth + 0.01, height/2])
+      rotate([90, 0, 0])
+        linear_extrude(height=engraving_depth)
+          text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
+  }
+}
+
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
   fr = max(0, fillet_radius);
   if (fr <= 0) {
@@ -93,6 +112,9 @@ module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=
 
       translate([-(width/2) + wall, plate_thickness/2 + wall, bottom])
         cube([width - 2*wall, depth - 2*wall, height - bottom]);
+
+      // Engraving subtraction on the front face
+      engrave_front_text(width, height, depth, wall);
     }
   } else {
     // Use 2D rounded rectangle extruded along Z to form the box with filleted walls
@@ -107,6 +129,9 @@ module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=
         linear_extrude(height=height - bottom)
           offset(delta=-wall)
             rounded_rect_2d(width, depth, fr);
+
+      // Engraving subtraction on the front face
+      engrave_front_text(width, height, depth, wall);
     }
   }
 }
