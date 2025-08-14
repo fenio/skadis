@@ -106,17 +106,19 @@ module front_text_geometry(depth_amount) {
 
 // Place embossed (raised) text on the front face
 module add_front_text_emboss(width, height, depth) {
-  translate([0, plate_thickness/2 + depth + text_epsilon, height/2])
-    rotate([90, 0, 0])
-      front_text_geometry(engrave_depth);
+  // Start slightly inside the front face and extrude outward (+Y)
+  translate([0, plate_thickness/2 + depth - text_epsilon, height/2])
+    rotate([-90, 0, 0])
+      front_text_geometry(engrave_depth + 2*text_epsilon);
 }
 
 // Place engraved (recessed) text volume to subtract from the front face
 module subtract_front_text_engrave(width, height, depth, wall) {
   fd = min(engrave_depth, max(wall - 0.2, 0.1));
-  translate([0, plate_thickness/2 + depth - fd - text_epsilon, height/2])
-    rotate([-90, 0, 0])
-      front_text_geometry(fd);
+  // Start slightly outside the front face and extrude inward (-Y)
+  translate([0, plate_thickness/2 + depth + text_epsilon, height/2])
+    rotate([90, 0, 0])
+      front_text_geometry(fd + 2*text_epsilon);
 }
 
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
