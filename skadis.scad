@@ -109,7 +109,8 @@ module add_front_text_emboss(width, height, depth) {
   // Start slightly inside the front face and extrude outward (+Y)
   translate([0, plate_thickness/2 + depth - text_epsilon, height/2])
     rotate([-90, 0, 0])
-      front_text_geometry(engrave_depth + 2*text_epsilon);
+      rotate([0, 0, 180])
+        front_text_geometry(engrave_depth + 2*text_epsilon);
 }
 
 // Place engraved (recessed) text volume to subtract from the front face
