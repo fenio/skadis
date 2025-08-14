@@ -96,21 +96,19 @@ module rounded_rect_2d(w, d, r) {
 // Text geometry helper: rounded glyphs extruded along +Y in local space
 module front_text_geometry(depth_amount) {
   linear_extrude(height=depth_amount)
-    mirror([1,0,0])
-      if (text_round_radius > 0)
-        offset(r=text_round_radius)
-          text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
-      else
+    if (text_round_radius > 0)
+      offset(r=text_round_radius)
         text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
+    else
+      text(text=engrave_text, size=engrave_size, font=engrave_font, halign="center", valign="center");
 }
 
 // Place embossed (raised) text on the front face
 module add_front_text_emboss(width, height, depth) {
   // Start slightly inside the front face and extrude outward (+Y)
   translate([0, plate_thickness/2 + depth - text_epsilon, height/2])
-    rotate([-90, 0, 0])
-      rotate([0, 0, 180])
-        front_text_geometry(engrave_depth + 2*text_epsilon);
+    rotate([90, 0, 0])
+      front_text_geometry(engrave_depth + 2*text_epsilon);
 }
 
 // Place engraved (recessed) text volume to subtract from the front face
@@ -118,7 +116,7 @@ module subtract_front_text_engrave(width, height, depth, wall) {
   fd = min(engrave_depth, max(wall - 0.2, 0.1));
   // Start slightly outside the front face and extrude inward (-Y)
   translate([0, plate_thickness/2 + depth + text_epsilon, height/2])
-    rotate([90, 0, 0])
+    rotate([-90, 0, 0])
       front_text_geometry(fd + 2*text_epsilon);
 }
 
