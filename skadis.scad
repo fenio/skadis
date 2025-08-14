@@ -1,3 +1,9 @@
+/* [Box Size] */
+width = 120;
+height = 60;
+depth = 20;
+
+/* [Hidden] */
 plate_thickness = 0; 
 clip_height     = 12;
 gap_x           = 40;
@@ -77,4 +83,4 @@ module front_box_on_plate(width, height, depth, wall=2, bottom=3) {
   }
 }
 
-skadis_box(width=120, height=60, depth=20, wall=2, bottom=3);
+skadis_box(width=width, height=height, depth=depth);
