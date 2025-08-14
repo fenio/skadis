@@ -21,6 +21,7 @@ engrave_depth = 0.8;           // Depth/height of text (mm). Used for both engra
 engrave_font  = "";           // Example: "Liberation Sans:style=Bold"; empty uses OpenSCAD default
 text_emboss   = false;         // If true, text is embossed (raised). If false, engraved (recessed)
 text_round_radius = 0.3;       // Rounds glyph corners (mm) to avoid sharp edges
+text_epsilon = 0.1;            // Small overlap (mm) to avoid coplanar CSG issues
 
 module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radius=0) {
   back_plate_with_clips(width=width, height=height);
@@ -105,7 +106,7 @@ module front_text_geometry(depth_amount) {
 
 // Place embossed (raised) text on the front face
 module add_front_text_emboss(width, height, depth) {
-  translate([0, plate_thickness/2 + depth, height/2])
+  translate([0, plate_thickness/2 + depth + text_epsilon, height/2])
     rotate([90, 0, 0])
       front_text_geometry(engrave_depth);
 }
@@ -113,8 +114,8 @@ module add_front_text_emboss(width, height, depth) {
 // Place engraved (recessed) text volume to subtract from the front face
 module subtract_front_text_engrave(width, height, depth, wall) {
   fd = min(engrave_depth, max(wall - 0.2, 0.1));
-  translate([0, plate_thickness/2 + depth - fd, height/2])
-    rotate([90, 0, 0])
+  translate([0, plate_thickness/2 + depth - fd - text_epsilon, height/2])
+    rotate([-90, 0, 0])
       front_text_geometry(fd);
 }
 
