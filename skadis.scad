@@ -16,7 +16,7 @@ wall_fillet_radius = 0; // set > 0 to enable wall fillet
 
 /* [Text] */
 front_text = "";                             // text content; leave empty to disable
-front_text_mode = "none";                    // none | engraved | embossed
+front_text_embossed = false;                  // false = engraved, true = embossed
 front_text_size = 12;                         // font size in mm
 front_text_depth = 1.0;                       // emboss/engrave depth in mm (along Y)
 front_text_font = "Liberation Sans:style=Bold"; // OpenSCAD font spec
@@ -97,18 +97,34 @@ module rounded_rect_2d(w, d, r) {
   offset(r=rr) offset(delta=-rr) square([w, d], center=false);
 }
 
-// Generate 3D text positioned on the front face; emboss controls orientation
-module front_text_shape(width, height, depth, emboss=false) {
-  has_text = (front_text_mode != "none") && (len(front_text) > 0);
+// Generate 3D text positioned on the front face; embossed controls orientation and additional flip
+module front_text_shape(width, height, depth, is_embossed=false) {
+  has_text = (len(front_text) > 0);
   if (has_text) {
     y_front = plate_thickness/2 + depth;
-    eps = 0.01;
-    ang = emboss ? -90 : 90; // map Z-extrusion to +/-Y
-    translate([front_text_offset_x, y_front + (emboss ? eps : -eps), (height/2) + front_text_offset_z])
-      rotate([ang, 0, 0])
-        linear_extrude(height=front_text_depth)
-          rotate([0, 0, front_text_rotation])
-            text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
+    eps = 0.02;
+
+    // Common 2D glyph (in XY), rotated in-plane first
+    module glyph2d() {
+      rotate([0, 0, front_text_rotation])
+        text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
+    }
+
+    if (is_embossed) {
+      // Place slightly intersecting the front face and extrude outward (+Y)
+      translate([front_text_offset_x, y_front - eps, (height/2) + front_text_offset_z])
+        // Apply +90 then extra 180 around X as requested; net keeps outward extrusion and flips appearance
+        rotate([180, 0, 0])
+          rotate([90, 0, 0])
+            linear_extrude(height=front_text_depth)
+              glyph2d();
+    } else {
+      // Engrave: start slightly outside and cut inward (-Y) so it is visible on the surface
+      translate([front_text_offset_x, y_front + eps, (height/2) + front_text_offset_z])
+        rotate([90, 0, 0])
+          linear_extrude(height=front_text_depth)
+            glyph2d();
+    }
   }
 }
 
@@ -143,16 +159,16 @@ module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=
   }
 
   // Apply text as engraved or embossed on the front face
-  has_text = (front_text_mode != "none") && (len(front_text) > 0);
-  if (has_text && (front_text_mode == "engraved")) {
+  has_text = (len(front_text) > 0);
+  if (has_text && !front_text_embossed) {
     difference() {
       base_box();
-      front_text_shape(width, height, depth, emboss=false);
+      front_text_shape(width, height, depth, is_embossed=false);
     }
-  } else if (has_text && (front_text_mode == "embossed")) {
+  } else if (has_text && front_text_embossed) {
     union() {
       base_box();
-      front_text_shape(width, height, depth, emboss=true);
+      front_text_shape(width, height, depth, is_embossed=true);
     }
   } else {
     base_box();
