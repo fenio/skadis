@@ -28,7 +28,7 @@ front_text_offset_x = 0;                      // offset along X on the front fac
 front_text_offset_z = 0;                      // offset along Z on the front face (mm)
 // Chamfer/taper for support-free text: 1.0 = no taper, smaller = more taper
 front_text_taper_enable = true;
-front_text_taper_ratio  = 0.9;                // 0.1..1.0; used as scale for engraved, inverted for embossed
+front_text_taper_ratio  = 0.9;                // 0.1..1.0; used as scale for both embossed and engraved
 
 module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radius=0) {
   back_plate_with_clips(width=width, height=height);
@@ -111,7 +111,7 @@ module front_text_shape(width, height, depth, is_embossed=false) {
     taper_raw = front_text_taper_ratio;
     taper_clamped = min(1, max(0.1, taper_raw));
     scale_engrave = front_text_taper_enable ? taper_clamped : 1;
-    scale_emboss  = front_text_taper_enable ? (1 / taper_clamped) : 1;
+    scale_emboss  = front_text_taper_enable ? taper_clamped : 1;
 
     if (is_embossed) {
       // Emboss: start just outside the front face and extrude inward (net union creates outside bump)
