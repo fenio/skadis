@@ -127,20 +127,23 @@ module front_text_volume(width, height, depth, wall, mode="engrave") {
   // Position: front face is at y = plate_thickness/2 + depth
   y_front = plate_thickness/2 + depth;
 
-  // Position: place emboss fully outside; engrave cuts into wall and slightly crosses the front plane
-  y_pos = is_engrave ? (y_front - engr_d) : (y_front + t_eps);
-  thickness = is_engrave ? (engr_d + t_eps) : (emb_h);
+  // For engrave, push the cutter slightly through the outer face and into the wall by engr_d
+  // For emboss, start slightly inside the wall so union merges cleanly, then grow outward
+  y_pos = is_engrave ? (y_front - engr_d - t_eps) : (y_front - t_eps);
+  thickness = is_engrave ? (engr_d + 2*t_eps) : (emb_h + t_eps);
 
   translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
-    // Orient text onto front plane with extrude along +Y; mirror Z to keep text upright (not upside down)
+    // Orient text onto front plane readable from the front: extrude along -Y into the wall for engrave, and +Y for emboss.
+    // Use a fixed orientation: rotate -90 deg around X, then mirror X to correct left-right, and mirror Z to correct upside-down.
     rotate([-90, 0, 0])
-      mirror([0,0,1])
-        linear_extrude(height=thickness)
-          text(text=user_text,
-               size=user_text_size,
-               font=user_text_font,
-               halign=user_text_halign,
-               valign=user_text_valign);
+      mirror([1,0,0])
+        mirror([0,0,1])
+          linear_extrude(height=thickness)
+            text(text=user_text,
+                 size=user_text_size,
+                 font=user_text_font,
+                 halign=user_text_halign,
+                 valign=user_text_valign);}
 }
 
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
