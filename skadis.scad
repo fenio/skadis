@@ -134,19 +134,20 @@ module front_text_volume(width, height, depth, wall, mode="engrave") {
     y_pos = y_front + t_eps;
         translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
       rotate([90, 0, 0])
-        linear_extrude(height=thickness)
-          text(text=user_text,
-               size=user_text_size,
-               font=user_text_font,
-               halign=user_text_halign,
-               valign=user_text_valign);
+        rotate([0, 0, 180])
+          linear_extrude(height=thickness)
+            text(text=user_text,
+                 size=user_text_size,
+                 font=user_text_font,
+                 halign=user_text_halign,
+                 valign=user_text_valign);
   } else {
-    // Start slightly inside the wall and grow outward toward +Y
-    thickness = emb_h + t_eps;
-    y_pos = y_front - t_eps;
-        translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
-      rotate([-90, 0, 0])
-        mirror([0,0,1])
+        // Start slightly outside the face and grow outward toward +Y so it’s visible even in preview
+    thickness = emb_h + 2*t_eps;
+    y_pos = y_front + t_eps;
+    translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
+      rotate([90, 0, 0])
+        rotate([0, 0, 180])
           linear_extrude(height=thickness)
             text(text=user_text,
                  size=user_text_size,
