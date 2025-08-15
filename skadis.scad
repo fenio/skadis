@@ -14,9 +14,40 @@ HS              = 1000;
 /* [Fillet] */
 wall_fillet_radius = 0; // set > 0 to enable wall fillet
 
+/* [Front Text] */
+user_text = "";                   // leave empty to disable text
+user_text_mode = "none";          // one of: "none", "engrave", "emboss"
+user_text_size = 14;               // text point size
+user_text_depth = 0.8;             // engraving depth (into the wall)
+user_text_height = 1.2;            // embossing height (out of the wall)
+user_text_font = "Liberation Sans:style=Bold"; // pick any installed font
+user_text_halign = "center";      // "left", "center", "right"
+user_text_valign = "center";      // "top", "center", "bottom", "baseline"
+user_text_offset_x = 0;            // horizontal offset (mm), +right / -left
+user_text_offset_z = 0;            // vertical offset (mm), +up / -down
+
 module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radius=0) {
-  back_plate_with_clips(width=width, height=height);
-  front_box_on_plate(width=width, height=height, depth=depth, wall=wall, bottom=bottom, fillet_radius=fillet_radius);
+  // Build main geometry (back plate + front box)
+  module main_body() {
+    back_plate_with_clips(width=width, height=height);
+    front_box_on_plate(width=width, height=height, depth=depth, wall=wall, bottom=bottom, fillet_radius=fillet_radius);
+  }
+
+  has_text = (len(user_text) > 0) && (user_text_mode != "none");
+
+  if (has_text && user_text_mode == "engrave") {
+    difference() {
+      main_body();
+      front_text_volume(width=width, height=height, depth=depth, wall=wall, mode="engrave");
+    }
+  } else if (has_text && user_text_mode == "emboss") {
+    union() {
+      main_body();
+      front_text_volume(width=width, height=height, depth=depth, wall=wall, mode="emboss");
+    }
+  } else {
+    main_body();
+  }
 }
 
 module back_plate_with_clips(width, height) {
@@ -82,6 +113,30 @@ module rounded_rect_2d(w, d, r) {
   rr = max(0, r);
   // Round corners by expanding and shrinking the rectangle footprint
   offset(r=rr) offset(delta=-rr) square([w, d], center=false);
+}
+
+// Create the text volume at the front face, either for engraving (into the wall)
+// or embossing (out of the wall). The text is centered by default and can be offset.
+module front_text_volume(width, height, depth, wall, mode="engrave") {
+  // Clamp depths to sensible limits
+  engr_d = min(user_text_depth, wall);
+  emb_h = user_text_height;
+  is_engrave = (mode == "engrave");
+  thickness = is_engrave ? engr_d : emb_h;
+
+  // Position: front face is at y = plate_thickness/2 + depth
+  y_front = plate_thickness/2 + depth;
+  y_pos = is_engrave ? (y_front - thickness) : y_front;
+
+  translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
+    // Rotate so extrude axis (Z) becomes +Y, keeping X and Z for layout
+    rotate([-90, 0, 0])
+      linear_extrude(height=thickness)
+        text(text=user_text,
+             size=user_text_size,
+             font=user_text_font,
+             halign=user_text_halign,
+             valign=user_text_valign);
 }
 
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
