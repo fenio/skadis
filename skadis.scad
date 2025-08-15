@@ -26,6 +26,9 @@ front_text_spacing = 1.0;                    // letter spacing multiplier
 front_text_rotation = 0;                      // rotation in degrees within the face plane
 front_text_offset_x = 0;                      // offset along X on the front face (mm)
 front_text_offset_z = 0;                      // offset along Z on the front face (mm)
+// Chamfer/taper for support-free text: 1.0 = no taper, smaller = more taper
+front_text_taper_enable = true;
+front_text_taper_ratio  = 0.9;                // 0.1..1.0; used as scale for both embossed and engraved
 
 module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radius=0) {
   back_plate_with_clips(width=width, height=height);
@@ -104,20 +107,25 @@ module front_text_shape(width, height, depth, is_embossed=false) {
     y_front = plate_thickness/2 + depth;
     eps = 0.02;
 
+    // Determine taper scale for support-friendly sides
+    taper_raw = front_text_taper_ratio;
+    taper_clamped = min(1, max(0.1, taper_raw));
+    scale_engrave = front_text_taper_enable ? taper_clamped : 1;
+    scale_emboss  = front_text_taper_enable ? taper_clamped : 1;
 
     if (is_embossed) {
       // Emboss: start just outside the front face and extrude inward (net union creates outside bump)
       translate([front_text_offset_x, y_front + eps, (height/2) + front_text_offset_z])
         // Rotate 180° around X as requested; total 270° to keep front-face orientation while flipping glyph
         rotate([270, 0, 0])
-          linear_extrude(height=front_text_depth)
+          linear_extrude(height=front_text_depth, scale=scale_emboss)
             rotate([180, 180, front_text_rotation])
               text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
     } else {
       // Engrave: start slightly outside and cut inward (-Y) so it is visible on the surface
       translate([front_text_offset_x, y_front + eps, (height/2) + front_text_offset_z])
         rotate([90, 0, 0])
-          linear_extrude(height=front_text_depth)
+          linear_extrude(height=front_text_depth, scale=scale_engrave)
             rotate([0, 180, front_text_rotation])
               text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
     }
