@@ -15,8 +15,9 @@ HS              = 1000;
 wall_fillet_radius = 0; // set > 0 to enable wall fillet
 
 /* [Front Text] */
-user_text = "";                   // leave empty to disable text
-user_text_mode = "none";          // one of: "none", "engrave", "emboss"
+user_text_enabled = false;
+user_text = "";                   // leave empty to disable text when not enabled
+user_text_mode = "engrave";          // ["engrave","emboss"]
 user_text_size = 14;               // text point size
 user_text_depth = 0.8;             // engraving depth (into the wall)
 user_text_height = 1.2;            // embossing height (out of the wall)
@@ -33,7 +34,7 @@ module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radi
     front_box_on_plate(width=width, height=height, depth=depth, wall=wall, bottom=bottom, fillet_radius=fillet_radius);
   }
 
-  has_text = (len(user_text) > 0) && (user_text_mode != "none");
+  has_text = user_text_enabled && (len(user_text) > 0);
 
   if (has_text && user_text_mode == "engrave") {
     difference() {
@@ -129,14 +130,15 @@ module front_text_volume(width, height, depth, wall, mode="engrave") {
   y_pos = is_engrave ? (y_front - thickness) : y_front;
 
   translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
-    // Rotate so extrude axis (Z) becomes +Y, keeping X and Z for layout
+    // Rotate so extrude axis (Z) becomes +Y, then mirror Z to keep text upright
     rotate([-90, 0, 0])
-      linear_extrude(height=thickness)
-        text(text=user_text,
-             size=user_text_size,
-             font=user_text_font,
-             halign=user_text_halign,
-             valign=user_text_valign);
+      mirror([0,0,1])
+        linear_extrude(height=thickness)
+          text(text=user_text,
+               size=user_text_size,
+               font=user_text_font,
+               halign=user_text_halign,
+               valign=user_text_valign);
 }
 
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
