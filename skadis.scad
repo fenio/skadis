@@ -133,17 +133,15 @@ module front_text_volume(width, height, depth, wall, mode="engrave") {
   thickness = is_engrave ? (engr_d + 2*t_eps) : (emb_h + t_eps);
 
   translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
-    // Orient text onto front plane readable from the front: extrude along -Y into the wall for engrave, and +Y for emboss.
-    // Use a fixed orientation: rotate -90 deg around X, then mirror X to correct left-right, and mirror Z to correct upside-down.
+    // Orient text onto front plane readable from the front: rotate -90 deg around X, then mirror Z to keep upright (no left-right mirroring)
     rotate([-90, 0, 0])
-      mirror([1,0,0])
-        mirror([0,0,1])
-          linear_extrude(height=thickness)
-            text(text=user_text,
-                 size=user_text_size,
-                 font=user_text_font,
-                 halign=user_text_halign,
-                 valign=user_text_valign);}
+      mirror([0,0,1])
+        linear_extrude(height=thickness)
+          text(text=user_text,
+               size=user_text_size,
+               font=user_text_font,
+               halign=user_text_halign,
+               valign=user_text_valign);
 }
 
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
