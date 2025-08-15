@@ -14,6 +14,19 @@ HS              = 1000;
 /* [Fillet] */
 wall_fillet_radius = 0; // set > 0 to enable wall fillet
 
+/* [Text] */
+front_text = "";                             // text content; leave empty to disable
+front_text_mode = "none";                    // none | engraved | embossed
+front_text_size = 12;                         // font size in mm
+front_text_depth = 1.0;                       // emboss/engrave depth in mm (along Y)
+front_text_font = "Liberation Sans:style=Bold"; // OpenSCAD font spec
+front_text_halign = "center";               // left | center | right
+front_text_valign = "center";               // top | center | baseline | bottom
+front_text_spacing = 1.0;                    // letter spacing multiplier
+front_text_rotation = 0;                      // rotation in degrees within the face plane
+front_text_offset_x = 0;                      // offset along X on the front face (mm)
+front_text_offset_z = 0;                      // offset along Z on the front face (mm)
+
 module skadis_box(width=120, height=160, depth=60, wall=2, bottom=3, fillet_radius=0) {
   back_plate_with_clips(width=width, height=height);
   front_box_on_plate(width=width, height=height, depth=depth, wall=wall, bottom=bottom, fillet_radius=fillet_radius);
@@ -84,30 +97,65 @@ module rounded_rect_2d(w, d, r) {
   offset(r=rr) offset(delta=-rr) square([w, d], center=false);
 }
 
+// Generate 3D text positioned on the front face; emboss controls orientation
+module front_text_shape(width, height, depth, emboss=false) {
+  has_text = (front_text_mode != "none") && (len(front_text) > 0);
+  if (has_text) {
+    y_front = plate_thickness/2 + depth;
+    eps = 0.01;
+    ang = emboss ? -90 : 90; // map Z-extrusion to +/-Y
+    translate([front_text_offset_x, y_front + (emboss ? eps : -eps), (height/2) + front_text_offset_z])
+      rotate([ang, 0, 0])
+        linear_extrude(height=front_text_depth)
+          rotate([0, 0, front_text_rotation])
+            text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
+  }
+}
+
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
   fr = max(0, fillet_radius);
-  if (fr <= 0) {
-    difference() {
-      translate([-width/2, plate_thickness/2, 0])
-        cube([width, depth, height]);
 
-      translate([-(width/2) + wall, plate_thickness/2 + wall, bottom])
-        cube([width - 2*wall, depth - 2*wall, height - bottom]);
+  // Base box geometry (hollow), independent of text treatment
+  module base_box() {
+    if (fr <= 0) {
+      difference() {
+        translate([-width/2, plate_thickness/2, 0])
+          cube([width, depth, height]);
+
+        translate([-(width/2) + wall, plate_thickness/2 + wall, bottom])
+          cube([width - 2*wall, depth - 2*wall, height - bottom]);
+      }
+    } else {
+      // Use 2D rounded rectangle extruded along Z to form the box with filleted walls
+      difference() {
+        // Outer shell
+        translate([-width/2, plate_thickness/2, 0])
+          linear_extrude(height=height)
+            rounded_rect_2d(width, depth, fr);
+
+        // Inner cavity: offset inward by wall to maintain thickness around corners, preserve bottom
+        translate([-width/2, plate_thickness/2, bottom])
+          linear_extrude(height=height - bottom)
+            offset(delta=-wall)
+              rounded_rect_2d(width, depth, fr);
+      }
+    }
+  }
+
+  // Apply text as engraved or embossed on the front face
+  has_text = (front_text_mode != "none") && (len(front_text) > 0);
+  if (has_text && (front_text_mode == "engraved")) {
+    difference() {
+      base_box();
+      front_text_shape(width, height, depth, emboss=false);
+    }
+  } else if (has_text && (front_text_mode == "embossed")) {
+    union() {
+      base_box();
+      front_text_shape(width, height, depth, emboss=true);
     }
   } else {
-    // Use 2D rounded rectangle extruded along Z to form the box with filleted walls
-    difference() {
-      // Outer shell
-      translate([-width/2, plate_thickness/2, 0])
-        linear_extrude(height=height)
-          rounded_rect_2d(width, depth, fr);
-
-      // Inner cavity: offset inward by wall to maintain thickness around corners, preserve bottom
-      translate([-width/2, plate_thickness/2, bottom])
-        linear_extrude(height=height - bottom)
-          offset(delta=-wall)
-            rounded_rect_2d(width, depth, fr);
-    }
+    base_box();
   }
 }
 
