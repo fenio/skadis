@@ -133,15 +133,14 @@ module front_text_volume(width, height, depth, wall, mode="engrave") {
   thickness = is_engrave ? (engr_d + 2*t_eps) : (emb_h + t_eps);
 
   translate([user_text_offset_x, y_pos, height/2 + user_text_offset_z])
-    // Rotate so extrude axis (Z) becomes +Y, then mirror Z after rotation to keep text upright
-    mirror([0,0,1])
-      rotate([-90, 0, 0])
-        linear_extrude(height=thickness)
-          text(text=user_text,
-               size=user_text_size,
-               font=user_text_font,
-               halign=user_text_halign,
-               valign=user_text_valign);
+    // Rotate so extrude axis (Z) becomes +Y with correct readable orientation from the front (no mirroring)
+    rotate([90, 0, 0])
+      linear_extrude(height=thickness)
+        text(text=user_text,
+             size=user_text_size,
+             font=user_text_font,
+             halign=user_text_halign,
+             valign=user_text_valign);
 }
 
 module front_box_on_plate(width, height, depth, wall=2, bottom=3, fillet_radius=0) {
