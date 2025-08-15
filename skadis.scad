@@ -104,26 +104,22 @@ module front_text_shape(width, height, depth, is_embossed=false) {
     y_front = plate_thickness/2 + depth;
     eps = 0.02;
 
-    // Common 2D glyph (in XY), rotated in-plane first
-    module glyph2d() {
-      rotate([0, 0, front_text_rotation])
-        text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
-    }
 
     if (is_embossed) {
-      // Place slightly intersecting the front face and extrude outward (+Y)
-      translate([front_text_offset_x, y_front - eps, (height/2) + front_text_offset_z])
-        // Apply +90 then extra 180 around X as requested; net keeps outward extrusion and flips appearance
-        rotate([180, 0, 0])
-          rotate([90, 0, 0])
-            linear_extrude(height=front_text_depth)
-              glyph2d();
+      // Emboss: start just outside the front face and extrude inward (net union creates outside bump)
+      translate([front_text_offset_x, y_front + eps, (height/2) + front_text_offset_z])
+        // Rotate 180° around X as requested; total 270° to keep front-face orientation while flipping glyph
+        rotate([270, 0, 0])
+          linear_extrude(height=front_text_depth)
+            rotate([0, 0, front_text_rotation])
+              text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
     } else {
       // Engrave: start slightly outside and cut inward (-Y) so it is visible on the surface
       translate([front_text_offset_x, y_front + eps, (height/2) + front_text_offset_z])
         rotate([90, 0, 0])
           linear_extrude(height=front_text_depth)
-            glyph2d();
+            rotate([0, 0, front_text_rotation])
+              text(front_text, size=front_text_size, font=front_text_font, halign=front_text_halign, valign=front_text_valign, spacing=front_text_spacing);
     }
   }
 }
